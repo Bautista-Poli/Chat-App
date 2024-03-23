@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Chat App</title>
+        <link rel="icon" href="">
+        <link rel="stylesheet" type="text/css" href="index.css" />
+        <script type="module">
+            import { io } from "https://cdn.socket.io/4.7.5/socket.io.esm.min.js";
+
+            function getParams(){
+                const queryString = window.location.search;
+                const urlParams = new URLSearchParams(queryString);
+
+                // Get the values of username and password
+                const username = urlParams.get('username');
+                const password = urlParams.get('password');
+                console.log(localStorage.getItem("username"));
+                localStorage.clear();
+                //Podria llegar a chequear con la base de datos aca y sino redirigir
+                if(username !== "admin" && username !== "usuario1"){
+                    window.location.href = "login.html";
+                
+                }
+
+                console.log("Username:", username);
+                console.log("Password:", password);
+                //delete the url parametres 
+                window.history.pushState({}, document.title, window.location.pathname);
+
+                
+
+                return username
+            }
+            const username = getParams();
+
+            
+
+            const socket = io({
+                auth: {
+                username: "Elisa",
+                serverOffset: 0
+                }
+            });
+
+            window.addEventListener('DOMContentLoaded', () => {
+                socket.emit('users');
+            });
+
+            const form = document.getElementById("message-form");
+            const input = document.getElementById("messageSpace");
+            const user = document.getElementById("username");
+            const userlist = document.getElementById("users-list");
+            const user2info = document.getElementById('user2')
+            const messages = document.getElementById('messages')
+
+            user.innerHTML = username;
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault()
+                if (input.value) {
+                    const nameElement = user2info.querySelector('.m-b-0');
+                    const user2 = nameElement.textContent;
+
+                    socket.emit('chat message', user2, input.value)
+                    input.value = ''
+                }
+            })
+
+            
+
+            socket.on('chat message', (msg,user) => {
+
+                // Asignar clase para el mensaje 
+                var place;
+                if (user!=username){
+                    place = "other-message";
+                }else{
+                    place = "my-message";
+                }
+
+                const item = `<li class="clearfix">
+                        <div class=" message ${place}">
+                            <p class="msg">${msg}</p>
+                            <p class="message-data-time ">10:10 AM</p>
+                        </div>
+                    </li>`
+                messages.insertAdjacentHTML('beforeend', item)
+            })
+
+            socket.on('users',(usersArray) => {
+                console.log(usersArray);
+                //userlist.innerHTML = "";
+                //
+                /*
+                for(var i = 0; i < usersArray.length; i++){
+                    const person = `<li class="clearfix">
+                    <button class="userButton" ">            
+                    <img src="${usersArray[i].image_src}" alt="avatar">
+                    <div class="about">
+                        <div class="name">${usersArray[i].username}</div>                                           
+                    </div>
+                    </button>
+                    </li>`
+                    userlist.insertAdjacentHTML('beforeend', person)
+                }
+                */
+                
+            })
+
+            socket.on('cargar chat',(usersArray, userId) => {
+                messages.innerHTML = "";
+                for(var i = 0; i < usersArray.length; i++){
+                    var place;
+                    if (usersArray[i].sender_id != userId){
+                        place = "other-message";
+                    }else{
+                        place = "my-message";
+                    }
+    
+                    const item = `<li class="clearfix">
+                            <div class=" message ${place}">
+                                <p class="msg">${usersArray[i].message_text}</p>
+                                <p class="message-data-time ">10:10 AM</p>
+                            </div>
+                            </li>`
+                    messages.insertAdjacentHTML('beforeend', item)
+                }
+                
+            })
+
+            function loadChat(user1,user2){
+                const item = ` <a data-toggle="modal" data-target="#view_info">
+                                    <img src="https://bootdey.com/img/Content/avatar/avatar2.png" alt="avatar">
+                                </a>
+                                <div class="chat-about" >
+                                    <h2 class="m-b-0">${user2}</h2>
+                                    <small>Online</small>  
+                                </div>`
+                user2info.innerHTML = item;
+                socket.emit('cargar chat',user2)
+            }
+            /*
+            function loadChat2(user1,user2){
+                socket.emit('cargar chat',user1,user2)
+            }
+
+            */
+            var buttons = document.querySelectorAll('.userButton');
+
+            // Loop through each button and attach an event listener
+            buttons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                const name = this.querySelector('.name').textContent; // Get the name from the clicked button's inner text
+                console.log(name);
+                loadChat("Elisa", name); // Pass the name to the loadChat function along with user2
+                });
+            });
+
+        </script>
+    </head>
+    <body>
+        <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+
+        <div class="container">
+        <div class="row clearfix">
+            <div class="col-lg-12">
+                <div class="card chat-app">
+                    <div id="plist" class="people-list">
+                        <div class="input-group">
+                            <!-- <img src="https://bootdey.com/img/Content/avatar/avatar2.png" alt="avatar"> -->
+                                <div class="about">
+                                    <div id="username"></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <ul class="list-unstyled chat-list mt-2 mb-0" id="users-list">
+                            <li class="clearfix">
+                                <button class="userButton" id="userButton">            
+                                <img src="https://pbs.twimg.com/media/F-NY-CWXIAAz6fi.jpg:large" alt="avatar">
+                                <div class="about">
+                                    <div class="name">John</div>                                           
+                                </div>
+                                </button>
+                            </li>
+                            <li class="clearfix">
+                                <button class="userButton" id="userButton">            
+                                <img src="https://cdn4.iconfinder.com/data/icons/avatars-xmas-giveaway/128/batman_hero_avatar_comics-512.png" alt="avatar">
+                                <div class="about">
+                                    <div class="name">Gabriel</div>                                           
+                                </div>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="chat">
+                        <div class="chat-header clearfix">
+                            <div class="row">
+                                <div class="col-lg-6" id="user2">
+                                    
+                                </div>
+                                
+                            </div>
+                        </div>
+                        <div class="chat-history">
+                            <ul id="messages">
+                            </ul>
+                        </div>
+                        <div class="compose">
+                            <form id="message-form" >
+                                <input name="message" id="messageSpace" type="text" placeholder="Message" required autocomplete="off">
+                                <button>Send</button>
+                            </form>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
